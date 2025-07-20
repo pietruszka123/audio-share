@@ -42,9 +42,7 @@ pub fn draw_right_panel(app: &mut App, frame: &mut Frame, layout: &Rc<[Rect]>) {
         .block(block)
         .render(layout[1], frame.buffer_mut());
 
-    let mut block = Block::bordered()
-        .title((" Status: ".to_span() + "Unknown ".gray().bold()).centered())
-        .border_set(border::PLAIN);
+    let mut block = Block::bordered().border_set(border::PLAIN);
     if let Some(state) = app.connection_state() {
         let t = state.to_string();
         let (style, t) = match state {
@@ -72,6 +70,8 @@ pub fn draw_right_panel(app: &mut App, frame: &mut Frame, layout: &Rc<[Rect]>) {
             ),
         };
         block = block.title((" Status: ".to_span() + t.bold() + " ".to_span()).centered());
+    } else {
+        block = block.title((" Status: ".to_span() + "Unknown ".gray().bold()).centered());
     }
 
     // ratatui::widgets::

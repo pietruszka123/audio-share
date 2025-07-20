@@ -3,17 +3,16 @@ use std::io::{Read, Write};
 
 use base64::Engine;
 use base64::prelude::BASE64_URL_SAFE;
+use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::{SampleFormat, SampleRate, Stream};
 use crossterm::event::{Event, EventStream, KeyCode, KeyEvent, KeyEventKind};
 use futures::{FutureExt, StreamExt};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout},
-    style::Stylize,
-    text::Line,
     widgets::ListState,
 };
+use tokio::select;
 use webrtc::ice_transport::ice_server::RTCIceServer;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 use webrtc::peer_connection::peer_connection_state::RTCPeerConnectionState;
@@ -25,11 +24,7 @@ pub struct Device {
 }
 impl From<cpal::Device> for Device {
     fn from(value: cpal::Device) -> Self {
-        let name = if let Ok(name) = value.name() {
-            Some(name)
-        } else {
-            None
-        };
+        let name = value.name().ok();
         Self {
             cpal_device: value,
             name: name,
@@ -52,7 +47,7 @@ impl Default for Selected {
 
 use crate::connection::Connection;
 use crate::ui::{draw_left_panel, draw_popup, draw_right_panel};
-#[derive(Default)]
+
 pub struct App {
     pub exit: bool,
     devices: Vec<Device>,
@@ -67,8 +62,25 @@ pub struct App {
     connection_status: String,
 
     stream: Option<Stream>,
+    listener: tokio::net::TcpListener,
 }
+
 impl App {
+    pub async fn new() -> anyhow::Result<Self> {
+        Ok(Self {
+            exit: Default::default(),
+            devices: Default::default(),
+            selected_device: Default::default(),
+            connection: Default::default(),
+            list_state: Default::default(),
+            state: Default::default(),
+            local_desc: Default::default(),
+            event_stream: Default::default(),
+            connection_status: Default::default(),
+            stream: Default::default(),
+            listener: tokio::net::TcpListener::bind("0.0.0.0:2138").await?,
+        })
+    }
     pub fn scan_devices(&mut self) -> anyhow::Result<()> {
         let host = cpal::Host::default();
         let default_device = host.default_output_device();
@@ -86,7 +98,7 @@ impl App {
     pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> anyhow::Result<()> {
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
-            self.handle_crossterm_events().await?;
+            self.handle_crossterm_events().await?
         }
         Ok(())
     }
@@ -141,6 +153,9 @@ impl App {
              _ = tokio::time::sleep(tokio::time::Duration::from_millis(100)) => {
             // Sleep for a short duration to avoid busy waiting.
         }
+        // r = self.listener.accept()=>{
+
+        // }
         }
         Ok(())
     }

@@ -1,14 +1,8 @@
 use std::{
-    fs::OpenOptions,
-    io::Write,
     sync::Arc,
     time::{Duration, Instant},
 };
 
-use rubato::{
-    FastFixedIn, FftFixedInOut, Resampler, SincFixedIn, SincInterpolationParameters,
-    SincInterpolationType,
-};
 use tokio::sync::Notify;
 use webrtc::{
     api::{
@@ -154,11 +148,9 @@ impl Connection {
             )?)
         };
 
-        let i = Instant::now();
-
-        let samples_per_ms = 48000 / 1000;
-        let samples_per_segment = samples_per_ms * 10;
-        let total_values = samples_per_segment * 2;
+        // let samples_per_ms = 48000 / 1000;
+        // let samples_per_segment = samples_per_ms * 10;
+        // let total_values = samples_per_segment * 2;
 
         let mut frame_size = None;
 
@@ -214,7 +206,7 @@ impl Connection {
                 } else {
                     left.copy_within(full_chunks * frame_size.., 0);
                     left.truncate(remainder);
-                    println!("Leftover data {} mode: {}", left.len(), frame_size);
+                    // println!("Leftover data {} mode: {}", left.len(), frame_size);
                 }
                 let l = frame_size / 2 / 48; // 48kHz
                 for frame in frames.into_iter() {
